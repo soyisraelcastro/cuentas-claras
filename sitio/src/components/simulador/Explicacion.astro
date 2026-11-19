@@ -1,0 +1,9 @@
+---
+/** El porqué del resultado: el del caso elegido o el que se arma con tus números. */
+interface Props { titular: string; texto: string }
+const { titular, texto } = Astro.props;
+---
+<div class="sim-explica">
+  <h3 data-sim-texto="titular">{titular}</h3>
+  <p data-sim-texto="explicacion">{texto}</p>
+</div>

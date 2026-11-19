@@ -22,9 +22,13 @@ interface Props {
   imagen?: string;
   noindex?: boolean;
   grafo?: Record<string, unknown>[];
+  /** og:type: las entradas del blog son "article". */
+  tipoOg?: 'website' | 'article';
+  /** Versiones alternas de la página, p. ej. la entrada en Markdown para LLMs. */
+  alternos?: { type: string; href: string; title?: string }[];
 }
 
-const { titulo, descripcion = SITIO.descripcion, imagen = '/og.png', noindex = false, grafo = [] } = Astro.props;
+const { titulo, descripcion = SITIO.descripcion, imagen = '/og.png', noindex = false, grafo = [], tipoOg = 'website', alternos = [] } = Astro.props;
 const tituloCompleto = titulo ? `${titulo} · ${SITIO.nombre}` : `${SITIO.nombre}: ${SITIO.lema}`;
 const canonica = new URL(Astro.url.pathname, SITIO.url).toString();
 const imagenUrl = new URL(imagen, SITIO.url).toString();
@@ -46,8 +50,10 @@ const imagenUrl = new URL(imagen, SITIO.url).toString();
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="alternate" type="text/plain" href="/llms.txt" title="Resumen para LLMs" />
+    <link rel="alternate" type="application/rss+xml" href="/blog/rss.xml" title="Blog de Cuentas Claras" />
+    {alternos.map((a) => <link rel="alternate" type={a.type} href={a.href} title={a.title} />)}
 
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={tipoOg} />
     <meta property="og:title" content={tituloCompleto} />
     <meta property="og:description" content={descripcion} />
     <meta property="og:url" content={canonica} />

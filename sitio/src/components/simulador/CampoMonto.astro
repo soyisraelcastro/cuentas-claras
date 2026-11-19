@@ -1,0 +1,32 @@
+---
+/**
+ * Un monto en pesos: la cifra grande se escribe con comas y el slider va de $0 a millones en escala
+ * logarítmica (los montos chicos no quedan aplastados). Los dos se mueven juntos (scripts/simulador.ts,
+ * `campoMonto`). Con teclado, el slider avanza de 500 en 500, de mil en mil, etc.
+ */
+import { escalaDeMontos, numero, pesos } from '../../scripts/simulador';
+
+interface Props {
+  /** La clave del monto: el script lo busca por `[data-sim-monto="<nombre>"]`. */
+  nombre: string;
+  etiqueta: string;
+  /** Lo que aclara la etiqueta: "sin IVA", "al mes"… */
+  detalle?: string;
+  valor: number;
+  /** Lo más que llega el slider (el campo acepta más). */
+  max?: number;
+  ayuda?: string;
+}
+const { nombre, etiqueta, detalle, valor, max = 5_000_000, ayuda } = Astro.props;
+const escala = escalaDeMontos({ max });
+const pos = escala.aPos(valor);
+---
+<div class="sim-campo">
+  <label class="sim-label">
+    <span class="sim-que">{etiqueta}{detalle && `, ${detalle}`}</span>
+    <span class="sim-num"><span aria-hidden="true">$</span><input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" data-sim-monto={nombre} value={numero(valor)} /></span>
+  </label>
+  <input class="sim-rango" type="range" min="0" max={escala.posiciones} step="1" value={pos} data-sim-rango={nombre} data-max={max} aria-label={detalle ? `${etiqueta}, ${detalle}` : etiqueta} aria-valuetext={pesos(valor, false)} style={`--p:${(pos / escala.posiciones) * 100}%`} />
+  <div class="sim-marcas" aria-hidden="true">{escala.marcas.map((m) => <span style={`--x:${m.x}`}>{m.texto}</span>)}</div>
+  {ayuda && <p class="sim-ayuda">{ayuda}</p>}
+</div>

@@ -1,0 +1,10 @@
+---
+/** El veredicto: el remate en Shrikhand (el único de la pieza), la cifra grande y lo que significa al año. */
+interface Props { rotulo: string; cifra: string; que: string; anio: string }
+const { rotulo, cifra, que, anio } = Astro.props;
+---
+<div class="sim-veredicto-bloque">
+  <p class="sim-veredicto"><span class="sim-rotulo" data-sim-texto="rotulo">{rotulo}</span></p>
+  <p class="sim-cifra"><b data-sim-cifra>{cifra}</b> <span data-sim-texto="que">{que}</span></p>
+  <p class="sim-anio" data-sim-texto="anio">{anio}</p>
+</div>

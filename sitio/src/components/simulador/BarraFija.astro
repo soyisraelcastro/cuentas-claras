@@ -1,0 +1,10 @@
+---
+/**
+ * El resultado en una línea. En el teléfono se queda pegada abajo mientras el simulador está en
+ * pantalla (sticky dentro del aparato: al terminar el simulador, se va con él). Es visual: el lector de
+ * pantalla oye el resultado por la región aria-live del aparato.
+ */
+interface Props { que: string; cifra: string }
+const { que, cifra } = Astro.props;
+---
+<p class="sim-fija" aria-hidden="true"><span data-sim-texto="fija-que">{que}</span><b data-sim-texto="fija-cifra">{cifra}</b></p>

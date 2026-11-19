@@ -1,0 +1,29 @@
+---
+/** Los casos de ejemplo como fichas con su calcomanía, más "Tus números". `marcado = null` marca "Tus números". */
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+
+interface Caso { id: string; nombre: string; detalle: string; icono?: ImageMetadata }
+interface Props {
+  casos: Caso[];
+  marcado?: string | null;
+  etiqueta?: string;
+  /** La ficha para escribir tus propios números; `false` para no ponerla. */
+  tuyos?: { titulo: string; detalle: string } | false;
+}
+const { casos, marcado = null, etiqueta = 'Casos de ejemplo', tuyos = { titulo: 'Tus números', detalle: 'Escríbelos abajo' } } = Astro.props;
+---
+<div class="sim-casos" data-sim-casos role="group" aria-label={etiqueta}>
+  {casos.map((c) => (
+    <button type="button" class="sim-caso" data-sim-caso={c.id} aria-pressed={c.id === marcado ? 'true' : 'false'}>
+      {c.icono && <Image class="sim-caso-icono" src={c.icono} alt="" width={38} densities={[1, 2]} />}
+      <span><b>{c.nombre}</b><small>{c.detalle}</small></span>
+    </button>
+  ))}
+  {tuyos && (
+    <button type="button" class="sim-caso sim-tuyos" data-sim-tuyos aria-pressed={marcado === null ? 'true' : 'false'}>
+      <span class="sim-mas" aria-hidden="true">+</span>
+      <span><b>{tuyos.titulo}</b><small>{tuyos.detalle}</small></span>
+    </button>
+  )}
+</div>

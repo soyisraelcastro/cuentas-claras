@@ -1,0 +1,11 @@
+---
+/** La cuenta en renglones cortos ("Hoy: 16% de $40,000 − … = $5,920"). El resultado de cada renglón no se parte. */
+interface Renglon { clave: string; nombre: string; expresion: string; resultado: string }
+interface Props { renglones: Renglon[] }
+const { renglones } = Astro.props;
+---
+<div class="sim-renglones">
+  {renglones.map((r) => (
+    <p><b>{r.nombre}</b><span><span data-sim-texto={`${r.clave}-expresion`}>{r.expresion}</span> <span class="sim-m" data-sim-texto={`${r.clave}-resultado`}>{r.resultado}</span></span></p>
+  ))}
+</div>

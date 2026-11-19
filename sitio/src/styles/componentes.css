@@ -1,5 +1,8 @@
 /* Componentes del design system. Cada uno se ve en /sistema. */
 
+/* ---------- Resaltador: el maíz que se pasa sobre una frase (con data-resalta, al entrar a la pantalla) ---------- */
+.resaltado { background: linear-gradient(transparent 58%, var(--maiz) 58%, var(--maiz) 92%, transparent 92%) no-repeat 0 0 / 100% 100%; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+
 /* ---------- Botón ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;

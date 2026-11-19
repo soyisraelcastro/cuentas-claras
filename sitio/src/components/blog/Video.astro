@@ -1,0 +1,73 @@
+---
+/**
+ * La clase en video dentro de una entrada del blog (diseño 2: la pantalla cacao de 16:9). Fachada: al
+ * abrir la página solo carga la miniatura y un botón; el iframe de YouTube (youtube-nocookie) entra
+ * cuando la persona le da play. Así la entrada no trae JavaScript de terceros al cargar (el Lighthouse
+ * 100 del sitio depende de eso). Sin `youtubeId` todavía, el bloque dice "Próximamente".
+ */
+import { CANAL } from '../../lib/sitio';
+
+interface Props { titulo: string; youtubeId?: string }
+const { titulo, youtubeId } = Astro.props;
+---
+<section class="video-entrada" aria-label={`Video: ${titulo}`}>
+  <div class="cabeza">
+    <h2>La clase completa en video</h2>
+    {!youtubeId && <p>Mientras sale, <a href={CANAL.url} rel="noopener">suscríbete al canal</a> para verla primero.</p>}
+  </div>
+  <div class="marco">
+    {youtubeId ? (
+      <button type="button" class="video-play" data-yt={youtubeId} data-titulo={titulo} aria-label={`Ver el video: ${titulo}`}>
+        <img src={`https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`} alt="" loading="lazy" decoding="async" width="480" height="360" />
+        <span class="video-icono" aria-hidden="true"></span>
+      </button>
+    ) : (
+      <div class="pronto">
+        <svg aria-hidden="true"><use href="#yt" /></svg>
+        <span class="etiqueta-pronto">Próximamente</span>
+        <p>{titulo}</p>
+        <span class="barra-video" aria-hidden="true"></span>
+      </div>
+    )}
+  </div>
+</section>
+
+<script>
+  for (const b of document.querySelectorAll<HTMLButtonElement>('.video-play')) {
+    b.addEventListener('click', () => {
+      const f = document.createElement('iframe');
+      f.src = `https://www.youtube-nocookie.com/embed/${b.dataset.yt}?autoplay=1&rel=0`;
+      f.title = b.dataset.titulo ?? 'Video';
+      f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      f.allowFullscreen = true;
+      b.replaceWith(f);
+    }, { once: true });
+  }
+</script>
+
+<style>
+  .video-entrada { max-width: 1000px; margin: clamp(60px, 7vw, 96px) auto 0; }
+  .cabeza { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+  .cabeza h2 { margin: 0; font-weight: 800; font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem); line-height: 1; letter-spacing: -.02em; font-variation-settings: "wdth" 92, "opsz" 72; }
+  .cabeza p { margin: 0; font-size: 15px; color: var(--cacao-70); }
+  .cabeza a { font-weight: 700; text-decoration-color: var(--rosa); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .marco { position: relative; aspect-ratio: 16 / 9; border: var(--linea); border-radius: var(--radio-s); overflow: hidden; box-shadow: var(--sombra-dura); background: repeating-linear-gradient(135deg, rgba(255, 246, 232, .04) 0 14px, transparent 14px 28px), var(--cacao); }
+  .marco :global(iframe), .video-play { display: block; width: 100%; height: 100%; border: 0; }
+  .video-play { position: relative; padding: 0; cursor: pointer; background: var(--cacao); }
+  .video-play img { width: 100%; height: 100%; object-fit: cover; }
+  .video-icono { position: absolute; inset: 0; margin: auto; width: 76px; height: 76px; border-radius: 50%; background: var(--rosa); box-shadow: 0 4px 0 var(--rosa-hondo); }
+  .video-icono::after { content: ""; position: absolute; left: 30px; top: 22px; border-style: solid; border-width: 16px 0 16px 26px; border-color: transparent transparent transparent var(--crema); }
+  .video-play:focus-visible { outline: 3px solid var(--maiz); outline-offset: -3px; }
+  .pronto { height: 100%; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 16px; text-align: center; color: var(--crema); }
+  .pronto svg { width: 84px; height: 60px; }
+  .etiqueta-pronto { padding: 4px 12px; border-radius: var(--pildora); background: var(--maiz); color: var(--cacao); font-weight: 800; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+  .pronto p { margin: 0; max-width: 24ch; font-weight: 800; font-size: clamp(1.3rem, 1rem + 1.4vw, 2.2rem); line-height: 1.05; font-variation-settings: "wdth" 92, "opsz" 72; text-wrap: balance; }
+  .barra-video { position: absolute; left: 22px; right: 22px; bottom: 18px; height: 4px; border-radius: 4px; background: rgba(255, 246, 232, .2); }
+  .barra-video::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 7%; border-radius: 4px; background: var(--rosa); }
+  @media (max-width: 560px) {
+    .pronto { gap: 8px; }
+    .pronto svg { width: 50px; height: 36px; }
+    .etiqueta-pronto { font-size: 11.5px; }
+    .pronto p { font-size: 1.15rem; }
+  }
+</style>

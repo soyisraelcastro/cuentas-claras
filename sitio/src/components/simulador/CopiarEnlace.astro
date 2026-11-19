@@ -1,0 +1,12 @@
+---
+/** Copia el enlace que abre el simulador tal cual (el caso o tus números en la URL). */
+interface Props { texto?: string }
+const { texto = 'Copiar enlace' } = Astro.props;
+---
+<div class="sim-comparte">
+  <button type="button" class="sim-copiar" data-sim-copiar>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></svg>
+    <span data-sim-texto="copiar">{texto}</span>
+  </button>
+  <span class="sim-copiado" data-sim-copiado role="status"></span>
+</div>

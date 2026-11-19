@@ -1,0 +1,203 @@
+/* Los simuladores del blog: el aparato cacao y sus piezas (ver README, "Simuladores").
+   Un solo archivo, todo prefijado con .sim; lo importa Aparato.astro y Astro lo deja una vez por página.
+   Usa los tokens del DS (src/styles/tokens.css). El color del resultado sale de data-tono en la raíz:
+   bien (maíz), mal (rosa) o neutro (crema); cada simulador decide qué veredicto es qué tono.
+   Contraste sobre cacao: crema 13.5:1, crema al 74% 8:1, maíz 8.8:1; el rosa solo en texto grande (3.2:1). */
+
+.sim {
+  --tinta: var(--crema);
+  --tinta-70: rgba(255, 246, 232, .74);
+  --tinta-20: rgba(255, 246, 232, .2);
+  --pad: clamp(18px, 3.4vw, 40px);
+  position: relative; z-index: 2;
+  /* El acomodo en una o dos columnas depende del ancho del aparato (igual a todo lo ancho que a media prosa) */
+  container: simulador / inline-size;
+  background: var(--cacao); color: var(--tinta);
+  border-radius: var(--radio-s);
+  box-shadow: 0 0 0 1px var(--cacao), 8px 8px 0 var(--maiz);
+  font-variant-numeric: tabular-nums;
+}
+.sim :focus-visible { outline: 3px solid var(--maiz); outline-offset: 3px; }
+.sim [hidden] { display: none !important; }
+
+/* Cabeza */
+.sim-cabeza { padding: 38px var(--pad) 0; }
+.sim-kicker { margin: 0; display: inline-flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-70); }
+.sim-kicker i { width: 10px; height: 10px; border-radius: 50%; background: var(--maiz); box-shadow: 0 0 0 4px rgba(246, 195, 67, .25); }
+.sim-titulo { margin: 10px 0 0; font-weight: 800; font-size: clamp(1.6rem, 1.15rem + 1.6vw, 2.5rem); line-height: 1; letter-spacing: -.02em; font-variation-settings: "wdth" 92, "opsz" 72; text-wrap: balance; color: var(--tinta); max-width: none; }
+
+/* Chips de casos: fichas de papel con su calcomanía */
+.sim-casos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; padding: 22px var(--pad) 0; }
+.sim-caso { position: relative; display: flex; align-items: center; gap: 10px; min-height: 66px; padding: 10px 12px; border: 0; border-radius: var(--radio-s); background: var(--papel); color: var(--cacao); font: inherit; text-align: left; cursor: pointer; transition: transform .3s var(--e-rebote), background-color .2s, box-shadow .2s; }
+.sim-caso-icono { flex: none; width: 38px; height: 38px; object-fit: contain; }
+.sim-caso b { display: block; font-weight: 800; font-size: 16px; line-height: 1.1; font-variation-settings: "wdth" 92; }
+.sim-caso small { display: block; font-size: 12.5px; line-height: 1.2; color: var(--cacao-70); }
+.sim-caso:hover { transform: translateY(-3px) rotate(-1deg); }
+.sim-caso[aria-pressed="true"] { background: var(--maiz); box-shadow: 0 0 0 3px var(--crema); transform: rotate(-1.5deg); }
+.sim-caso[aria-pressed="true"]::after { content: ""; position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: var(--rosa) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='%23FFF6E8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 18px no-repeat; }
+.sim-tuyos { background: transparent; color: var(--tinta); box-shadow: inset 0 0 0 1.5px var(--tinta-20); }
+.sim-tuyos small { color: var(--tinta-70); }
+.sim-mas { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; border: 2px dashed var(--tinta-70); font-weight: 800; font-size: 20px; line-height: 1; }
+.sim-tuyos[aria-pressed="true"] { background: var(--maiz); color: var(--cacao); box-shadow: 0 0 0 3px var(--crema); }
+.sim-tuyos[aria-pressed="true"] small { color: var(--cacao-70); }
+.sim-tuyos[aria-pressed="true"] .sim-mas { border-color: var(--cacao); }
+
+/* Cuerpo: controles | resultado */
+.sim-cuerpo { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); margin-top: 26px; border-top: 1px solid var(--tinta-20); }
+.sim-controles, .sim-resultado { padding: 26px var(--pad) 30px; }
+.sim-resultado { border-left: 1px solid var(--tinta-20); }
+
+/* Campo de monto: la cifra grande, editable, y el slider */
+.sim-campo + .sim-campo { margin-top: 24px; }
+.sim-label { display: block; cursor: text; }
+.sim-que { display: block; font-weight: 700; font-size: 15.5px; color: var(--tinta-70); }
+.sim-num { display: flex; align-items: baseline; gap: 4px; margin-top: 2px; border-bottom: 2px solid var(--tinta-20); transition: border-color .2s; }
+.sim-num:focus-within { border-color: var(--maiz); }
+.sim-num > span { font-weight: 800; font-size: clamp(2rem, 1.4rem + 1.8vw, 3.1rem); line-height: 1.1; color: var(--tinta-70); }
+.sim-num input { flex: 1; min-width: 0; width: 100%; padding: 0 0 4px; border: 0; background: transparent; color: var(--tinta); font: 800 clamp(2rem, 1.4rem + 1.8vw, 3.1rem)/1.1 var(--display); font-variation-settings: "wdth" 90; letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+.sim-num input:focus { outline: none; }
+.sim-num:has(input:focus-visible) { outline: 3px solid var(--maiz); outline-offset: 4px; border-radius: 2px; }
+.sim-rango { display: block; width: 100%; height: 36px; margin: 8px 0 0; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
+.sim-rango::-webkit-slider-runnable-track { height: 6px; border-radius: 6px; background: linear-gradient(90deg, var(--maiz) var(--p, 0%), var(--tinta-20) var(--p, 0%)); }
+.sim-rango::-moz-range-track { height: 6px; border-radius: 6px; background: var(--tinta-20); }
+.sim-rango::-moz-range-progress { height: 6px; border-radius: 6px; background: var(--maiz); }
+.sim-rango::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; margin-top: -11px; border-radius: 50%; background: var(--maiz); border: 3px solid var(--crema); box-shadow: 0 3px 0 rgba(0, 0, 0, .35); transition: transform .3s var(--e-rebote); }
+.sim-rango::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--maiz); border: 3px solid var(--crema); }
+.sim-rango:active::-webkit-slider-thumb { transform: scale(1.15); }
+.sim-marcas { position: relative; height: 18px; font-size: 12px; font-weight: 600; color: var(--tinta-70); }
+.sim-marcas span { position: absolute; top: 0; left: calc(14px + (100% - 28px) * var(--x) / 100); translate: -50% 0; white-space: nowrap; }
+.sim-marcas span:first-child { translate: -14px 0; }
+.sim-ayuda { margin: 8px 0 0; font-size: 14px; line-height: 1.4; color: var(--tinta-70); max-width: 50ch; }
+
+/* Interruptor segmentado */
+.sim-opciones { margin: 24px 0 0; padding: 0; border: 0; min-width: 0; }
+.sim-opciones legend { float: left; width: 100%; padding: 0; font-weight: 700; font-size: 15.5px; color: var(--tinta-70); }
+.sim-opciones legend + * { clear: both; }
+.sim-segmento { display: inline-flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.sim-segmento label { position: relative; cursor: pointer; }
+.sim-segmento input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.sim-segmento span { display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: var(--pildora); box-shadow: inset 0 0 0 1.5px var(--tinta-20); font-weight: 700; font-size: 15px; transition: background-color .2s, box-shadow .2s; }
+.sim-segmento label:hover span { box-shadow: inset 0 0 0 1.5px var(--maiz); }
+.sim-segmento input:checked + span { background: var(--maiz); color: var(--cacao); box-shadow: none; }
+.sim-segmento input:focus-visible + span { outline: 3px solid var(--maiz); outline-offset: 3px; }
+.sim-segmento input:disabled + span { opacity: .4; text-decoration: line-through; cursor: not-allowed; }
+.sim-segmento label:has(input:disabled) { cursor: not-allowed; }
+
+/* Notas chicas bajo los controles */
+.sim-notas { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 8px; font-size: 14px; line-height: 1.45; color: var(--tinta-70); }
+.sim-notas li { padding: 10px 12px; border-radius: var(--radio-s); background: rgba(255, 246, 232, .07); }
+.sim-notas b { display: block; margin-bottom: 2px; font-size: 11.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--maiz); }
+
+/* Resultado: el remate (Shrikhand), la cifra y el año */
+.sim-veredicto { margin: 0; }
+.sim-rotulo { display: inline-block; font-family: var(--rotulo); font-weight: 400; font-size: clamp(1.9rem, 1.3rem + 1.8vw, 2.8rem); line-height: 1.05; color: var(--crema); rotate: -2.5deg; transform-origin: left center; }
+.sim[data-tono="bien"] .sim-rotulo { color: var(--maiz); }
+.sim[data-tono="mal"] .sim-rotulo { color: var(--rosa); }
+.sim-rotulo.sim-pega { animation: sim-pega .7s var(--e-rebote); }
+@keyframes sim-pega { from { scale: 1.5; rotate: 8deg; opacity: 0; } }
+.sim-cifra { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; margin: 14px 0 0; }
+.sim-cifra b { font-weight: 800; font-size: clamp(2.8rem, 1.8rem + 3.4vw, 4.8rem); line-height: .95; letter-spacing: -.04em; font-variation-settings: "wdth" 86; white-space: nowrap; }
+.sim-cifra span { font-weight: 700; font-size: 17px; color: var(--tinta-70); }
+.sim-anio { margin: 8px 0 0; font-weight: 700; font-size: 15.5px; color: var(--tinta); }
+.sim[data-tono="bien"] .sim-anio { color: var(--maiz); }
+.sim[data-tono="neutro"] .sim-anio { color: var(--tinta-70); }
+
+/* Barras: misma escala; un saldo negativo cuelga bajo la línea del cero */
+.sim-balanza { position: relative; margin-top: 22px; padding: 30px 0 28px; }
+.sim-plot { position: relative; height: 210px; }
+.sim-plot::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(to top, var(--tinta-20) 0 1px, transparent 1px 42px); opacity: .45; }
+.sim-base { position: absolute; left: -6px; right: -6px; height: 2px; background: var(--crema); }
+.sim-barra { position: absolute; }
+.sim-relleno { position: absolute; inset: 0; border-radius: 4px 4px 0 0; transition: transform .6s var(--e-salida); }
+.sim-barra[data-signo="neg"] .sim-relleno { border-radius: 0 0 4px 4px; }
+.sim-barra[data-rol="referencia"] .sim-relleno { background: var(--crema); }
+.sim-barra[data-rol="opcion"] .sim-relleno { background: var(--maiz); }
+.sim[data-tono="mal"] .sim-barra[data-rol="opcion"] .sim-relleno { background: var(--rosa); }
+.sim-barra[data-signo="neg"] .sim-relleno { background: repeating-linear-gradient(135deg, var(--crema) 0 7px, transparent 7px 13px); box-shadow: inset 0 0 0 2px var(--crema); }
+.sim-barra-valor { position: absolute; text-align: center; font-weight: 800; font-size: 17px; white-space: nowrap; }
+.sim-nombres { position: absolute; left: 0; right: 0; bottom: 0; height: 22px; font-size: 13px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-70); }
+.sim-nombres span { position: absolute; text-align: center; white-space: nowrap; }
+
+/* La cuenta, renglón por renglón (el resultado de cada renglón no se parte) */
+.sim-renglones { margin: 18px 0 0; padding: 14px 0 0; border-top: 1px solid var(--tinta-20); display: grid; gap: 6px; font-size: 15px; line-height: 1.4; }
+.sim-renglones p { margin: 0; display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; }
+.sim-renglones b { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-70); padding-top: 3px; }
+.sim-m { white-space: nowrap; font-weight: 700; }
+
+/* La regla: una regla de verdad, tendida sobre el escritorio */
+.sim-regla-bloque { padding: 28px var(--pad) 30px; border-top: 1px solid var(--tinta-20); }
+.sim-regla-cabeza { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 24px; }
+.sim-regla-cabeza h3 { margin: 0; font-weight: 800; font-size: 1.35rem; line-height: 1.1; font-variation-settings: "wdth" 92, "opsz" 48; color: var(--tinta); }
+.sim-regla-cabeza p { margin: 0; font-size: 15.5px; color: var(--tinta-70); }
+.sim-regla-cabeza p b { color: var(--tinta); }
+.sim-regla { --pf: 0; --raya: .5; position: relative; margin: 50px 0 46px; height: 76px; border-radius: 4px; color: var(--cacao); box-shadow: 0 6px 0 rgba(0, 0, 0, .3); transition: filter .3s;
+  background: linear-gradient(90deg, rgba(246, 195, 67, .5) 0 calc(var(--raya) * 100%), rgba(228, 0, 124, .16) calc(var(--raya) * 100%) 100%) bottom / 100% 26px no-repeat, var(--papel); }
+.sim-regla::before { content: ""; position: absolute; inset: 0 12px auto; height: 26px; background: repeating-linear-gradient(90deg, var(--cacao) 0 1px, transparent 1px calc(100% / 20)) top left / 100% 12px no-repeat, repeating-linear-gradient(90deg, var(--cacao) 0 1.5px, transparent 1.5px calc(100% / 10)) top left / 100% 22px no-repeat; }
+.sim-regla::after { content: ""; position: absolute; top: 0; right: 12px; width: 1.5px; height: 22px; background: var(--cacao); }
+.sim-nums { position: absolute; left: 12px; right: 12px; top: 26px; height: 18px; font-size: 12px; font-weight: 800; }
+.sim-nums span { position: absolute; translate: -50% 0; }
+.sim-nums span:first-child { translate: 0 0; }
+.sim-nums span:last-child { translate: -100% 0; }
+.sim-zona { position: absolute; bottom: 5px; font-size: 12.5px; font-weight: 800; }
+.sim-zona-a { left: 12px; }
+.sim-zona-b { right: 12px; color: var(--rosa-hondo); }
+.sim-raya { position: absolute; top: -10px; bottom: -6px; left: calc(12px + (100% - 24px) * var(--raya)); width: 3px; margin-left: -1.5px; background: var(--rosa); border-radius: 2px; }
+.sim-raya b { position: absolute; top: -28px; left: 50%; translate: -50% 0; padding: 2px 8px; border-radius: var(--pildora); background: var(--rosa-hondo); color: var(--crema); font-size: 12.5px; white-space: nowrap; }
+.sim-tu { position: absolute; bottom: -12px; left: calc(12px + (100% - 24px) * var(--pf)); width: 0; transition: left .6s var(--e-salida); }
+.sim-tu::before { content: ""; position: absolute; bottom: 0; left: -9px; border: 9px solid transparent; border-bottom: 13px solid var(--maiz); filter: drop-shadow(0 -1px 0 var(--cacao)); }
+.sim-tu b { position: absolute; top: 12px; left: 0; translate: calc(var(--pf) * -100%) 0; padding: 3px 10px; border-radius: var(--pildora); background: var(--maiz); color: var(--cacao); font-size: 13px; font-weight: 800; white-space: nowrap; }
+.sim-regla[data-apagada] { filter: saturate(0); margin-bottom: 18px; }
+.sim-regla[data-apagada] .sim-tu { display: none; }
+.sim-regla-aviso { margin: 16px 0 0; padding: 10px 14px; border-left: 4px solid var(--maiz); background: rgba(255, 246, 232, .07); font-weight: 700; font-size: 15px; }
+.sim-regla-nota { margin: 0; font-size: 14px; color: var(--tinta-70); max-width: 80ch; }
+.sim-regla-aviso + .sim-regla-nota { margin-top: 12px; }
+
+/* El porqué */
+.sim-explica { padding: 26px var(--pad); border-top: 1px solid var(--tinta-20); display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 8px 40px; }
+.sim-explica h3 { margin: 0; font-weight: 800; font-size: clamp(1.3rem, 1.05rem + .8vw, 1.7rem); line-height: 1.1; font-variation-settings: "wdth" 92, "opsz" 48; text-wrap: balance; color: var(--tinta); }
+.sim-explica p { margin: 0; font-size: 16.5px; line-height: 1.5; color: var(--tinta); }
+
+/* Pie: aviso breve y compartir */
+.sim-pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 28px; padding: 18px var(--pad) 22px; border-top: 1px solid var(--tinta-20); background: rgba(0, 0, 0, .14); border-radius: 0 0 var(--radio-s) var(--radio-s); }
+.sim-aviso { margin: 0; max-width: 72ch; font-size: 13.5px; line-height: 1.45; color: var(--tinta-70); }
+.sim-aviso b { color: var(--tinta); }
+.sim-comparte { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.sim-copiar { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: var(--pildora); background: var(--maiz); color: var(--cacao); font: 800 14.5px/1 var(--display); cursor: pointer; box-shadow: 0 3px 0 var(--maiz-hondo); transition: transform .2s; }
+.sim-copiar:hover { transform: translateY(-2px); }
+.sim-copiar svg { width: 16px; height: 16px; }
+.sim-copiado { font-size: 13.5px; font-weight: 700; color: var(--maiz); }
+.sim-copiado:empty { display: none; }
+
+/* La barra del resultado: en el teléfono se queda pegada abajo mientras mueves los números */
+.sim-fija { display: none; }
+.sim-voz { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@container simulador (max-width: 860px) {
+  .sim-cuerpo { grid-template-columns: minmax(0, 1fr); }
+  .sim-resultado { border-left: 0; border-top: 1px solid var(--tinta-20); }
+  .sim-explica { grid-template-columns: minmax(0, 1fr); }
+}
+/* La barra pegada es cosa del teléfono (de la pantalla, no del aparato) */
+@media (max-width: 900px) {
+  .sim-fija { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 12px var(--pad) calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--crema); color: var(--cacao); border-radius: 0 0 var(--radio-s) var(--radio-s); box-shadow: 0 -6px 18px rgba(59, 36, 24, .25); }
+  .sim[data-tono="bien"] .sim-fija { background: var(--maiz); }
+  .sim[data-tono="mal"] .sim-fija { background: var(--rosa-hondo); color: var(--crema); }
+  .sim-fija span { min-width: 0; font-weight: 800; font-size: 15px; line-height: 1.2; }
+  .sim-fija b { flex: none; font-weight: 800; font-size: 17px; white-space: nowrap; }
+  .sim-pie { border-radius: 0; }
+}
+/* En el teléfono las fichas van en una tira que se desliza con el dedo */
+@container simulador (max-width: 520px) {
+  .sim-casos { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; scrollbar-width: none; }
+  .sim-casos::-webkit-scrollbar { display: none; }
+  .sim-caso { flex: none; width: 152px; scroll-snap-align: start; margin-top: 8px; }
+  .sim-cabeza { padding-top: 30px; }
+  .sim-plot { height: 170px; }
+  .sim-barra-valor { font-size: 15px; }
+  .sim-renglones p { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .sim-nums span:nth-child(even) { display: none; }
+  .sim-zona { font-size: 11.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sim *, .sim *::before, .sim *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}

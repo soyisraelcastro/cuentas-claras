@@ -1,8 +1,13 @@
 ---
 /** La barra de arriba. En la portada las ligas son anclas; en las demás páginas llevan "/". */
+import { entradas } from '../lib/blog';
+
 interface Props { portada?: boolean }
 const { portada = false } = Astro.props;
 const a = (id: string) => (portada ? `#${id}` : `/#${id}`);
+const enBlog = Astro.url.pathname.startsWith('/blog');
+// "Blog" sale en la barra hasta que haya una entrada publicada (en dev cuentan los borradores).
+const hayBlog = (await entradas()).length > 0;
 ---
 <header class="barra" id="barra">
   <div class="envoltura">
@@ -13,6 +18,7 @@ const a = (id: string) => (portada ? `#${id}` : `/#${id}`);
     <nav class="nav" aria-label="Secciones">
       <a href={a('calcula')}>Calcula</a>
       <a href={a('encuentras')}>Qué hay aquí</a>
+      {hayBlog && <a href="/blog" aria-current={enBlog ? 'page' : undefined}>Blog</a>}
       <a href={a('series')}>Series</a>
       <a href={a('preguntas')}>Preguntas</a>
       <a href={a('quien')}>Quién</a>
@@ -33,7 +39,7 @@ const a = (id: string) => (portada ? `#${id}` : `/#${id}`);
   .nav { display: flex; gap: 0; font-size: 14.5px; font-weight: 700; }
   .nav a { text-decoration: none; padding: 22px 16px; border-left: 1px solid var(--cacao-12); transition: background-color .2s; }
   .nav a:last-child { border-right: 1px solid var(--cacao-12); }
-  .nav a:hover { background: var(--maiz); }
+  .nav a:hover, .nav a[aria-current="page"] { background: var(--maiz); }
   .btn { min-height: 40px; padding: 0 18px; font-size: 14px; }
   @media (max-width: 1060px) { .nav a:nth-child(n+4):not(:last-child) { display: none; } }
   @media (max-width: 900px) { .nav { display: none; } .btn { min-height: 44px; } }

@@ -1,0 +1,44 @@
+---
+/**
+ * La regla: una regla de verdad de 0 a 100%, con la raya donde cambia el veredicto y una marca con tu
+ * proporción. `apagada` la pone en gris y quita la marca (cuando la regla no aplica a tu caso).
+ */
+import { estiloRegla } from '../../scripts/simulador';
+
+interface Props {
+  titulo: string;
+  /** "Tus compras con IVA son el" [proporción] "de lo que cobras." */
+  antes: string;
+  proporcion: string;
+  despues: string;
+  /** Dónde va la raya, de 0 a 1. */
+  raya: number;
+  rayaTexto: string;
+  /** Lo que dice cada lado de la raya. */
+  zonas: [string, string];
+  /** Tu proporción, de 0 a 1 (lo que pasa de 1 se queda en la orilla). */
+  valor: number;
+  marca: string;
+  apagada?: boolean;
+  /** Un aviso que el script muestra u oculta con `mostrar(raiz, aviso.clave, …)`. */
+  aviso?: { clave: string; texto: string; visible: boolean };
+  nota?: string;
+}
+const { titulo, antes, proporcion, despues, raya, rayaTexto, zonas, valor, marca, apagada = false, aviso, nota } = Astro.props;
+const numeros = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+---
+<div class="sim-regla-bloque">
+  <div class="sim-regla-cabeza">
+    <h3>{titulo}</h3>
+    <p>{antes} <b data-sim-texto="proporcion">{proporcion}</b> {despues}</p>
+  </div>
+  <div class="sim-regla" data-sim-regla data-apagada={apagada ? '' : undefined} aria-hidden="true" style={`--raya:${raya};${estiloRegla(valor)}`}>
+    <div class="sim-nums">{numeros.map((n) => <span style={`left:${n}%`}>{n === 100 ? '100%' : n}</span>)}</div>
+    <span class="sim-zona sim-zona-a">{zonas[0]}</span>
+    <span class="sim-zona sim-zona-b">{zonas[1]}</span>
+    <span class="sim-raya"><b>{rayaTexto}</b></span>
+    <span class="sim-tu"><b data-sim-texto="marca">{marca}</b></span>
+  </div>
+  {aviso && <p class="sim-regla-aviso" data-sim-si={aviso.clave} hidden={!aviso.visible}>{aviso.texto}</p>}
+  {nota && <p class="sim-regla-nota">{nota}</p>}
+</div>

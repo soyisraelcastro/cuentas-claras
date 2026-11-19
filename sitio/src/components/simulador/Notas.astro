@@ -1,0 +1,9 @@
+---
+/** Notas chicas bajo los controles (lo que cambia según lo que elegiste). El script las cambia con `ponerNota`. */
+interface Nota { clave: string; titulo: string; texto: string; oculta?: boolean }
+interface Props { notas: Nota[] }
+const { notas } = Astro.props;
+---
+<ul class="sim-notas">
+  {notas.map((n) => <li data-sim-nota={n.clave} hidden={n.oculta}><b data-sim-nota-titulo>{n.titulo}</b><span data-sim-nota-texto>{n.texto}</span></li>)}
+</ul>

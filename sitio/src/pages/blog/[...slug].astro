@@ -1,0 +1,18 @@
+---
+/** Una entrada del blog por archivo de src/content/blog (la URL es el id: el nombre del archivo). */
+import { render } from 'astro:content';
+
+import Entrada from '../../layouts/Entrada.astro';
+import { entradas } from '../../lib/blog';
+
+export async function getStaticPaths() {
+  const lista = await entradas();
+  return lista.map((entrada) => ({ params: { slug: entrada.id }, props: { entrada } }));
+}
+
+const { entrada } = Astro.props;
+const { Content, headings } = await render(entrada);
+---
+<Entrada entrada={entrada} headings={headings}>
+  <Content />
+</Entrada>

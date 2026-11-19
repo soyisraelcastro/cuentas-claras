@@ -1,0 +1,30 @@
+---
+/**
+ * Barras en la misma escala: hoy contra la opción (o las que sean). Un saldo negativo cuelga bajo la
+ * línea del cero. La geometría la calcula `geometriaBarras`, igual aquí que en el navegador.
+ */
+import { geometriaBarras } from '../../scripts/simulador';
+
+interface Barra {
+  clave: string;
+  nombre: string;
+  valor: number;
+  /** El valor ya con formato ($5,920). */
+  texto: string;
+  /** referencia (crema) u opcion (maíz, rosa si te va mal). */
+  rol?: 'referencia' | 'opcion';
+}
+interface Props { barras: Barra[] }
+const { barras } = Astro.props;
+const geo = geometriaBarras(barras.map((b) => b.valor));
+---
+<div class="sim-balanza" aria-hidden="true">
+  <div class="sim-plot" data-sim-plot>
+    {barras.map((b, i) => (
+      <div class="sim-barra" data-sim-barra={b.clave} data-rol={b.rol ?? 'opcion'} data-signo={geo.barras[i].signo} style={geo.barras[i].barra}><span class="sim-relleno" style={geo.barras[i].relleno}></span></div>
+    ))}
+    <span class="sim-base" data-sim-base style={geo.base}></span>
+    {barras.map((b, i) => <span class="sim-barra-valor" data-sim-barra-valor={b.clave} style={geo.barras[i].etiqueta}>{b.texto}</span>)}
+  </div>
+  <div class="sim-nombres">{barras.map((b, i) => <span style={geo.barras[i].lado}>{b.nombre}</span>)}</div>
+</div>

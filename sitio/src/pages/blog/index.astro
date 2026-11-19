@@ -1,0 +1,51 @@
+---
+/** El índice del blog: las entradas publicadas, de la más nueva a la más vieja. */
+import Barra from '../../components/Barra.astro';
+import Pie from '../../components/Pie.astro';
+import Base from '../../layouts/Base.astro';
+import { entradas, fechaIso, fechaLarga, rutaEntrada } from '../../lib/blog';
+
+const lista = await entradas();
+---
+<Base titulo="Blog" descripcion="Las clases de Cuentas Claras por escrito: el SAT, tu declaración y tus números, con ejemplos que puedes ajustar a tu caso." noindex={lista.length === 0}>
+  <Barra />
+  <main id="contenido" class="envoltura blog">
+    <div class="cel hoja-blog">
+      <span class="pestana cacao">Blog</span>
+      <h1 class="disp">Las clases, por escrito.</h1>
+      <p class="intro">El SAT, tu declaración y tus números, con ejemplos que puedes ajustar a tu caso.</p>
+      {lista.length === 0 ? (
+        <p class="vacio">Muy pronto, la primera entrada.</p>
+      ) : (
+        <ol class="entradas">
+          {lista.map((e) => (
+            <li>
+              <a href={rutaEntrada(e)}>
+                {e.data.serie && <span class="serie">{e.data.serie}</span>}
+                <b>{e.data.titulo}</b>
+                <span class="resumen">{e.data.descripcion}</span>
+                <time datetime={fechaIso(e.data.fecha)}>{fechaLarga(e.data.fecha)}</time>
+                {e.data.borrador && <span class="borrador">Borrador</span>}
+              </a>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  </main>
+  <Pie />
+</Base>
+
+<style>
+  .blog { padding-block: clamp(40px, 6vw, 72px) 0; max-width: 940px; }
+  .hoja-blog { padding: clamp(26px, 5vw, 60px); box-shadow: var(--sombra-dura); }
+  h1 { margin: 0; font-size: clamp(2.4rem, 1.6rem + 3vw, 4rem); }
+  .entradas { list-style: none; margin: 36px 0 0; padding: 0; display: grid; gap: 14px; }
+  .entradas a { display: grid; gap: 6px; padding: 18px 20px; border: var(--linea); border-radius: var(--radio-s); color: inherit; text-decoration: none; background: var(--papel); transition: translate var(--d-corta) var(--e-salida), box-shadow var(--d-corta) var(--e-salida); }
+  .entradas a:hover, .entradas a:focus-visible { translate: 0 -3px; box-shadow: var(--sombra-dura); }
+  .entradas b { font-size: 1.3rem; }
+  .serie, time, .resumen { color: var(--cacao-70); font-size: var(--t-chico); }
+  .serie { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .borrador { font-weight: 800; color: var(--rosa-hondo); font-size: var(--t-chico); }
+  .vacio { margin-top: 32px; color: var(--cacao-70); }
+</style>
