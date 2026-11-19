@@ -18,7 +18,7 @@ El diseño es el de la propuesta 2, "Simulador" (`design/blog/iva-7/2-simulador.
 | # | Entrada (URL) | Live y video | Deck | Simulador | Estado |
 |---|---|---|---|---|---|
 | 1 | `/blog/iva-7-resico-2027` | Reforma 2027 para pymes (se graba; `video.youtubeId` vacío = "Próximamente") | `2026-11-23-reforma-2027-pymes-iva-7.json` | **IVA al 7%**: hoy contra el 7%, con la raya del 56% | Portada al diseño 2, en borrador |
-| 2 | `/blog/meses-sin-intereses-cuanto-puedes-comprar` | "Antes del Buen Fin, calcula tu límite real y evita al SAT" (`d4d29T1oeYQ`, 51 min) | `2026-11-11-meses-sin-intereses.json` | **Saca tu número** (abajo) | Por hacer |
+| 2 | `/blog/meses-sin-intereses-cuanto-puedes-comprar` | "Antes del Buen Fin, calcula tu límite real y evita al SAT" (`d4d29T1oeYQ`, 51 min) | `2026-11-11-meses-sin-intereses.json` | **Saca tu número** (abajo) | Texto en borrador (2026-11-19); el simulador espera el OK de Israel |
 | 3 | `/blog/deducciones-personales-cuanto-te-regresan` | El live no está completo en el canal: se usan sus cortes (Juan vs Laura `SagYQS2K-ns`, 5 deducciones `ph2i_DemWE8`, el tope `WgK6PrODjAg`, el mito del saldo a favor `icaYpQW83Mk`) | `2026-11-12-deducciones-cuanto-te-regresan.json` | **Cuánto te regresan** (abajo) | Por hacer |
 | 4 | `/blog/si-solo-tengo-sueldo-tengo-que-declarar` | "¿Solo tienes sueldo? Cuándo declarar al SAT" (`Oz9LCT2EzhE`, 36 min); cortes `BLKgpNVP1BI` (5 casos) y `nAQf-kIlyMk` (por qué te sale a pagar) | `2026-11-05-si-solo-tengo-sueldo.json` y el carrusel `2026-10-31-me-toca-declarar.json` | **¿Me toca declarar?** (abajo) | Por hacer |
 | 5 | `/blog/sueldo-y-algo-mas` | Sin video completo en el canal | `2026-11-13-sueldo-y-algo-mas.json` | Puede ir dentro de la 4 (intereses, Sofipo, herencia) | Decidir |
