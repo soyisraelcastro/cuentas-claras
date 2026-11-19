@@ -3,6 +3,7 @@
  * Sin nodos Offer: Cuentas Claras no publica precios (viven en sicastro.com/honorarios).
  */
 
+import type { EntradaBlog } from './blog';
 import { PREGUNTAS } from './guia';
 import { CANAL, DESPACHO, PERSONA, SITIO } from './sitio';
 
@@ -89,5 +90,66 @@ export function consulta(): Nodo {
     areaServed: { '@type': 'Country', name: 'México' },
     availableLanguage: 'es',
     url: `${SITIO.url}/agendar`,
+  };
+}
+
+/** Una entrada del blog (BlogPosting) y, si ya tiene video, la clase en YouTube (VideoObject). */
+export function entradaBlog(e: EntradaBlog, url: string, imagen: string): Nodo[] {
+  const d = e.data;
+  const nodo: Nodo = {
+    '@type': 'BlogPosting',
+    '@id': `${url}#entrada`,
+    headline: d.titulo,
+    description: d.descripcion,
+    url,
+    image: imagen,
+    datePublished: d.fecha.toISOString(),
+    dateModified: (d.actualizado ?? d.fecha).toISOString(),
+    inLanguage: SITIO.lang,
+    author: { '@id': ID.persona },
+    publisher: { '@id': ID.despacho },
+    isPartOf: { '@id': ID.sitio },
+    keywords: d.etiquetas.join(', ') || undefined,
+  };
+  const v = d.video;
+  if (!v?.youtubeId) return [nodo];
+  const video: Nodo = {
+    '@type': 'VideoObject',
+    '@id': `${url}#video`,
+    name: v.titulo,
+    description: d.descripcion,
+    thumbnailUrl: `https://i.ytimg.com/vi/${v.youtubeId}/hqdefault.jpg`,
+    embedUrl: `https://www.youtube-nocookie.com/embed/${v.youtubeId}`,
+    contentUrl: `https://www.youtube.com/watch?v=${v.youtubeId}`,
+    uploadDate: (v.subido ?? d.fecha).toISOString(),
+    duration: v.duracion,
+    isPartOf: { '@id': ID.canal },
+  };
+  return [{ ...nodo, video: { '@id': `${url}#video` } }, video];
+}
+
+/** Migas de una página interna (Inicio › … › la página), para que el buscador entienda dónde está. */
+export function migas(items: { nombre: string; url: string }[]): Nodo {
+  return {
+    '@type': 'BreadcrumbList',
+    itemListElement: [{ nombre: 'Inicio', url: SITIO.url }, ...items].map((x, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: x.nombre,
+      item: x.url,
+    })),
+  };
+}
+
+/** Preguntas frecuentes de una entrada (frontmatter `preguntas`): FAQPage con respuesta de Israel. */
+export function preguntasEntrada(lista: { pregunta: string; respuesta: string }[], url: string): Nodo {
+  return {
+    '@type': 'FAQPage',
+    '@id': `${url}#preguntas`,
+    mainEntity: lista.map((p) => ({
+      '@type': 'Question',
+      name: p.pregunta,
+      acceptedAnswer: { '@type': 'Answer', text: p.respuesta, author: { '@id': ID.persona } },
+    })),
   };
 }

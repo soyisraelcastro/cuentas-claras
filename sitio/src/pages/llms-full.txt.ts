@@ -5,10 +5,13 @@
 import type { APIRoute } from 'astro';
 
 import { BUSCA, TEMA } from '../lib/agendar';
+import { entradas } from '../lib/blog';
+import { aMarkdown } from '../lib/blog-markdown';
 import { MESES, PREGUNTAS, TRAE } from '../lib/guia';
 import { CANAL, DESPACHO, PERSONA, PRECIO_CONSULTA_URL, SITIO } from '../lib/sitio';
 
-export const GET: APIRoute = () => {
+export const GET: APIRoute = async () => {
+  const blog = await entradas();
   const doc = `# ${SITIO.nombre}: ${SITIO.lema}
 
 ${SITIO.descripcion}
@@ -50,5 +53,7 @@ en ${SITIO.url}/agendar. Es para estos temas: ${Object.values(TEMA).filter((t) =
 Lo que busca la consulta: ${BUSCA.entender.toLowerCase()}. Los trámites sueltos, las empresas y
 quien quiere que se lo hagan van directo al despacho. Precio: ${PRECIO_CONSULTA_URL}.
 `;
-  return new Response(doc, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  // El blog completo al final: cada entrada publicada en Markdown limpio (la calculadora queda como liga).
+  const textoBlog = blog.length ? `\n## Blog\n\n${blog.map((e) => aMarkdown(e).replace(/^# /m, '### ')).join('\n---\n\n')}` : '';
+  return new Response(doc + textoBlog, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 };

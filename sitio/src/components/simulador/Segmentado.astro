@@ -1,0 +1,22 @@
+---
+/** Un interruptor de opciones (Sí/No, física/moral…). Son radios de verdad: teclado y lector de pantalla incluidos. */
+interface Opcion { valor: string; texto: string }
+interface Props {
+  /** La clave: el script lo busca por `[data-sim-opcion="<nombre>"]` y renombra los radios por instancia. */
+  nombre: string;
+  leyenda: string;
+  opciones: Opcion[];
+  valor: string;
+  deshabilitadas?: string[];
+}
+const { nombre, leyenda, opciones, valor, deshabilitadas = [] } = Astro.props;
+const grupo = `sim-${nombre}-${Math.random().toString(36).slice(2, 8)}`;
+---
+<fieldset class="sim-opciones">
+  <legend>{leyenda}</legend>
+  <div class="sim-segmento">
+    {opciones.map((o) => (
+      <label><input type="radio" name={grupo} value={o.valor} data-sim-opcion={nombre} checked={o.valor === valor} disabled={deshabilitadas.includes(o.valor)} /><span>{o.texto}</span></label>
+    ))}
+  </div>
+</fieldset>

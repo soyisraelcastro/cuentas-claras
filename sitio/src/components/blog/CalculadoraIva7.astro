@@ -1,0 +1,153 @@
+---
+/**
+ * El simulador del IVA al 7% (entrada iva-7-resico-2027): las piezas de src/components/simulador/ más
+ * la cuenta y los textos de src/lib/iva7.ts, la fuente única. El HTML sale con el caso inicial ya
+ * calculado (buscadores y LLMs ven cifras reales sin JavaScript); el script solo actualiza.
+ *
+ * Se puede usar más de una vez por página: el script busca solo dentro de cada
+ * [data-simulador="iva7"]. Solo el que lleva `enlace` lee y escribe la URL: ?caso=ana|jorge|luis|marta|sa
+ * o ?cobra=&compras=&retencion=si&persona=moral.
+ */
+import type { ImageMetadata } from 'astro';
+
+import Aparato from '../simulador/Aparato.astro';
+import BarraFija from '../simulador/BarraFija.astro';
+import Barras from '../simulador/Barras.astro';
+import CampoMonto from '../simulador/CampoMonto.astro';
+import Chips from '../simulador/Chips.astro';
+import CopiarEnlace from '../simulador/CopiarEnlace.astro';
+import Explicacion from '../simulador/Explicacion.astro';
+import Notas from '../simulador/Notas.astro';
+import Regla from '../simulador/Regla.astro';
+import Renglones from '../simulador/Renglones.astro';
+import Resultado from '../simulador/Resultado.astro';
+import Segmentado from '../simulador/Segmentado.astro';
+import { CASOS, RAYA, estadoDe, presentar } from '../../lib/iva7';
+import { pesos } from '../../scripts/simulador';
+
+interface Props {
+  /** El caso con el que arranca (y el que trae el HTML). */
+  inicial?: string;
+  id?: string;
+  enlace?: boolean;
+}
+const { inicial = 'ana', id, enlace = false } = Astro.props;
+
+const stickers = import.meta.glob<{ default: ImageMetadata }>('../../assets/stickers/*.png', { eager: true });
+const icono = (nombre: string) => stickers[`../../assets/stickers/${nombre}.png`]?.default;
+
+const caso = CASOS.find((c) => c.id === inicial) ?? CASOS[0];
+const v = presentar(estadoDe(caso));
+---
+<Aparato tipo="iva7" kicker="Simulador · cuenta de un mes" titulo="Elige un caso o mete tus números" etiqueta="Simulador: ¿te conviene el IVA al 7%?" id={id} enlace={enlace} inicial={caso.id} tono={v.tono} veredicto={v.veredicto}>
+  <Chips slot="casos" marcado={caso.id} casos={CASOS.map((c) => ({ id: c.id, nombre: c.corto, detalle: c.oficio, icono: icono(c.icono) }))} />
+
+  <Fragment slot="controles">
+    <CampoMonto nombre="cobra" etiqueta="Lo que cobras al mes" detalle="sin IVA" valor={v.estado.cobra} />
+    <CampoMonto nombre="compras" etiqueta="Tus compras con IVA al mes" detalle="sin contar el IVA" valor={v.estado.compras}
+      ayuda="Mercancía, refacciones, software, internet. ¿Vas a comprar equipo? Súmalo: una laptop de $30,000 trae $4,800 de IVA que ya no acreditarías." />
+    <Segmentado nombre="retencion" leyenda="¿Tus clientes te retienen IVA?" valor={v.estado.retencion ? 'si' : 'no'}
+      opciones={[{ valor: 'no', texto: 'No' }, { valor: 'si', texto: 'Sí, 2/3 del IVA' }]} deshabilitadas={v.estado.persona === 'moral' ? ['si'] : []} />
+    <Segmentado nombre="persona" leyenda="Estás en RESICO como" valor={v.estado.persona}
+      opciones={[{ valor: 'fisica', texto: 'Persona física' }, { valor: 'moral', texto: 'Persona moral' }]} />
+    <Notas notas={[
+      { clave: 'retencion', ...v.notaRetencion },
+      { clave: 'persona', ...v.notaPersona },
+      { clave: 'tope', titulo: v.notaTope?.titulo ?? '', texto: v.notaTope?.texto ?? '', oculta: !v.notaTope },
+    ]} />
+  </Fragment>
+
+  <Fragment slot="resultado">
+    <Resultado rotulo={v.rotulo} cifra={pesos(v.cifra, v.decimales)} que={v.que} anio={v.anio} />
+    <Barras barras={[
+      { clave: 'hoy', nombre: 'Hoy', valor: v.r.hoy, texto: v.hoyTexto, rol: 'referencia' },
+      { clave: 'con', nombre: 'Con el 7%', valor: v.r.conOpcion, texto: v.conTexto, rol: 'opcion' },
+    ]} />
+    <Renglones renglones={[
+      { clave: 'hoy', nombre: 'Hoy', ...v.formulaHoy },
+      { clave: 'con', nombre: 'Con el 7%', ...v.formulaCon },
+    ]} />
+  </Fragment>
+
+  <Regla titulo="La regla del 56%" antes="Tus compras con IVA son el" proporcion={v.proporcionTexto} despues="de lo que cobras."
+    raya={RAYA} rayaTexto="56.25%" zonas={['Te conviene', 'Quédate como estás']} valor={v.r.proporcion} marca={v.marca} apagada={v.estado.retencion}
+    aviso={{ clave: 'retencion', texto: 'Si te retienen IVA, la regla no te sirve: espera las reglas del SAT.', visible: v.estado.retencion }}
+    nota="La raya sale de 9% ÷ 16%: entre el 16% que cobras y el 7% que pagas hay 9%, y eso es lo que puedes “perder” en IVA de compras antes de que deje de convenir." />
+  <Explicacion titular={v.titular} texto={v.porque} />
+
+  <Fragment slot="pie">
+    <p class="sim-aviso"><b>Informativo:</b> no sustituye la revisión de tu caso. Las personas y empresas son ficticias. Se supone que el 7% va sobre lo cobrado sin IVA; falta que el SAT lo confirme en sus reglas.</p>
+    <CopiarEnlace texto={v.copiar} />
+  </Fragment>
+  <BarraFija slot="fija" que={v.fija.que} cifra={v.fija.cifra} />
+</Aparato>
+
+<script>
+  import { alPedirCaso, anunciar, campoMonto, chips, contar, copiarEnlace, emitirResultado, escribirUrl, iniciarTodos, leerUrl, mostrar, pegar, pesos, pintarBarras, pintarRegla, ponerNota, ponerTexto, segmentado } from '../../scripts/simulador';
+  import { CASOS, estadoDe, estadoDeUrl, presentar, type Estado } from '../../lib/iva7';
+
+  iniciarTodos('[data-simulador="iva7"]', (raiz, n) => {
+    const estado: Estado = estadoDe(CASOS.find((c) => c.id === raiz.dataset.inicial) ?? CASOS[0]);
+    let anterior = raiz.dataset.veredicto ?? '';
+
+    const cobra = campoMonto(raiz, 'cobra', (x) => { estado.cobra = x; pintar(); });
+    const compras = campoMonto(raiz, 'compras', (x) => { estado.compras = x; pintar(); });
+    const retencion = segmentado(raiz, 'retencion', n, (x) => { estado.retencion = x === 'si'; pintar(); });
+    const persona = segmentado(raiz, 'persona', n, (x) => {
+      estado.persona = x === 'moral' ? 'moral' : 'fisica';
+      if (estado.persona === 'moral') estado.retencion = false; // la retención de 2/3 es para personas físicas
+      pintar();
+    });
+    const casos = chips(raiz, (id) => cargar(id), () => cobra.enfocar());
+
+    function pintar() {
+      const v = presentar(estado);
+      cobra.poner(estado.cobra);
+      compras.poner(estado.compras);
+      retencion.poner(estado.retencion ? 'si' : 'no');
+      retencion.deshabilitar('si', estado.persona === 'moral');
+      persona.poner(estado.persona);
+      casos.marcar(v.caso?.id ?? null);
+
+      ponerTexto(raiz, 'rotulo', v.rotulo);
+      if (v.veredicto !== anterior) pegar(raiz.querySelector('[data-sim-texto="rotulo"]'));
+      anterior = v.veredicto;
+      contar(raiz.querySelector('[data-sim-cifra]'), v.cifra, (x) => pesos(x, v.decimales));
+      ponerTexto(raiz, 'que', v.que);
+      ponerTexto(raiz, 'anio', v.anio);
+      pintarBarras(raiz, [v.r.hoy, v.r.conOpcion], [v.hoyTexto, v.conTexto]);
+      ponerTexto(raiz, 'hoy-expresion', v.formulaHoy.expresion);
+      ponerTexto(raiz, 'hoy-resultado', v.formulaHoy.resultado);
+      ponerTexto(raiz, 'con-expresion', v.formulaCon.expresion);
+      ponerTexto(raiz, 'con-resultado', v.formulaCon.resultado);
+      ponerTexto(raiz, 'proporcion', v.proporcionTexto);
+      pintarRegla(raiz, v.r.proporcion, v.marca, estado.retencion);
+      mostrar(raiz, 'retencion', estado.retencion);
+      ponerTexto(raiz, 'titular', v.titular);
+      ponerTexto(raiz, 'explicacion', v.porque);
+      ponerNota(raiz, 'retencion', v.notaRetencion);
+      ponerNota(raiz, 'persona', v.notaPersona);
+      ponerNota(raiz, 'tope', v.notaTope);
+      ponerTexto(raiz, 'copiar', v.copiar);
+      ponerTexto(raiz, 'fija-que', v.fija.que);
+      ponerTexto(raiz, 'fija-cifra', v.fija.cifra);
+
+      escribirUrl(raiz, v.consulta);
+      anunciar(raiz, v.voz);
+      emitirResultado(raiz, { titulo: v.titulo, filas: v.filas, veredicto: v.veredicto, tono: v.tono, resumen: v.resumen });
+    }
+
+    function cargar(id: string) {
+      const c = CASOS.find((x) => x.id === id);
+      if (!c) return;
+      Object.assign(estado, estadoDe(c));
+      pintar();
+    }
+
+    alPedirCaso(raiz, cargar);
+    copiarEnlace(raiz, () => presentar(estado).consulta);
+    const pedido = estadoDeUrl(leerUrl(raiz));
+    if (pedido) Object.assign(estado, pedido);
+    pintar();
+  });
+</script>

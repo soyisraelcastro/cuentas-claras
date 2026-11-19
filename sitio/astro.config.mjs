@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig, envField } from 'astro/config';
 
+import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
 
@@ -13,8 +14,11 @@ export default defineConfig({
   adapter: vercel(),
   trailingSlash: 'never',
   integrations: [
+    // MDX para el blog (src/content/blog): Markdown con componentes, p. ej. la calculadora del IVA al 7%
+    mdx(),
     // /sistema es la hoja del design system: interna, fuera del sitemap y con noindex
-    sitemap({ filter: (url) => !/\/(sistema|404|listo)$/.test(url) }),
+    // Las versiones .md de las entradas y el feed no son páginas: tampoco van
+    sitemap({ filter: (url) => !/\/(sistema|404|listo)$/.test(url) && !/\.(md|xml)$/.test(url) }),
   ],
   // El CSS va incrustado: con un solo archivo externo Lighthouse ya marca "render-blocking"
   build: { inlineStylesheets: 'always' },

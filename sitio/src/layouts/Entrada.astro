@@ -1,0 +1,293 @@
+---
+/**
+ * Layout de una entrada del blog (diseño 2 de cuentas-claras/design/blog/iva-7/, elegido el
+ * 2026-11-19). Aplica a todas las entradas:
+ * - Encabezado: migas, título (lo que va después de los dos puntos lleva el resaltador), descripción,
+ *   firma y vigencia. Con `herramienta` en el frontmatter, Israel se recarga en el simulador, que
+ *   abre la entrada justo debajo; sin herramienta, la foto va parada sobre el filete.
+ * - Lectura: riel con "Tu cuenta" (escucha `simulador:resultado`) y el índice; la prosa del MDX.
+ * - Video (fachada), cierre a /agendar, fuentes y aviso. JSON-LD: BlogPosting (+ VideoObject) y migas.
+ */
+import type { MarkdownHeading } from 'astro';
+import { Picture, getImage } from 'astro:assets';
+
+import Barra from '../components/Barra.astro';
+import Pie from '../components/Pie.astro';
+import CalculadoraIva7 from '../components/blog/CalculadoraIva7.astro';
+import Video from '../components/blog/Video.astro';
+import Base from './Base.astro';
+import apoyado from '../assets/israel-apoyado.webp';
+import cruzado from '../assets/israel-cruzado.webp';
+import duda from '../assets/israel-duda.webp';
+import ojo from '../assets/stickers/ojo.png';
+import { fechaIso, fechaLarga, rutaEntrada, type EntradaBlog } from '../lib/blog';
+import { preguntasDelCuerpo } from '../lib/blog-markdown';
+import { despacho, entradaBlog, migas, persona, preguntasEntrada, sitioWeb } from '../lib/schema';
+import { PERSONA, SITIO } from '../lib/sitio';
+
+/** Los simuladores que pueden abrir una entrada (el valor de `herramienta` en el frontmatter). */
+const HERRAMIENTAS = { iva7: CalculadoraIva7 } as const;
+
+interface Props { entrada: EntradaBlog; headings: MarkdownHeading[] }
+const { entrada, headings } = Astro.props;
+const d = entrada.data;
+const url = new URL(rutaEntrada(entrada), SITIO.url).toString();
+const imagen = d.portada
+  ? (await getImage({ src: d.portada, width: 1200, height: 630, fit: 'cover', format: 'jpg' })).src
+  : '/og.png';
+const imagenAbsoluta = new URL(imagen, SITIO.url).toString();
+const indice = headings.filter((h) => h.depth === 2);
+const Herramienta = d.herramienta ? HERRAMIENTAS[d.herramienta] : null;
+// Las preguntas frecuentes salen de la sección "## Preguntas frecuentes" del texto (JSON-LD FAQPage).
+const preguntas = preguntasDelCuerpo(entrada.body);
+
+/* "IVA al 7% para RESICO (Reforma 2027): ¿te conviene?": lo que va después de los dos puntos se resalta */
+const corte = d.titulo.indexOf(': ');
+const [titulo, remate] = corte > 0 ? [d.titulo.slice(0, corte + 1), d.titulo.slice(corte + 2)] : [d.titulo, ''];
+const calcomania = await getImage({ src: ojo, width: 132, format: 'webp' });
+---
+<Base
+  titulo={d.titulo}
+  descripcion={d.descripcion}
+  imagen={imagen}
+  tipoOg="article"
+  noindex={d.borrador}
+  grafo={[sitioWeb(), persona(), despacho(), ...entradaBlog(entrada, url, imagenAbsoluta), migas([{ nombre: 'Blog', url: `${SITIO.url}/blog` }, { nombre: d.titulo, url }]), ...(preguntas.length ? [preguntasEntrada(preguntas, url)] : [])]}
+  alternos={[{ type: 'text/markdown', href: `${rutaEntrada(entrada)}.md`, title: 'Esta entrada en Markdown' }]}
+>
+  <Barra />
+  <main id="contenido">
+    <article class="envoltura entrada">
+      <header class:list={['portada', { 'con-herramienta': Herramienta }]}>
+        <div class="portada-texto">
+          <p class="miga etiqueta"><a href="/blog">Blog</a>{d.serie && <span>{d.serie}</span>}</p>
+          {d.borrador && <p class="borrador">Borrador: solo se ve en desarrollo y en la preview.</p>}
+          <h1 class="disp">{titulo}{remate && <> <span class="resaltado" data-resalta>{remate}</span></>}</h1>
+          <p class="lead">{d.descripcion}</p>
+        </div>
+        <p class="firma">Por <b>{d.autor}</b>, {PERSONA.titulo.toLowerCase()} · <time datetime={fechaIso(d.fecha)}>{fechaLarga(d.fecha)}</time>
+          {d.actualizado && <> · actualizada el <time datetime={fechaIso(d.actualizado)}>{fechaLarga(d.actualizado)}</time></>}</p>
+        {d.vigencia && <p class="vigencia"><i aria-hidden="true"></i>{d.vigencia}</p>}
+        {Herramienta
+          ? <div class="foto apoyado"><Picture src={apoyado} formats={['avif', 'webp']} widths={[300, 600]} sizes="(max-width: 860px) 172px, 300px" alt={`${PERSONA.nombre}, contador público, recargado en el simulador`} loading="eager" fetchpriority="high" /></div>
+          : <div class="foto parado"><Picture src={duda} formats={['avif', 'webp']} widths={[280, 560]} sizes="(max-width: 860px) 150px, 280px" alt={`${PERSONA.nombre}, contador público, pensando`} loading="eager" fetchpriority="high" /></div>}
+      </header>
+
+      {Herramienta && <Herramienta id="herramienta" enlace />}
+
+      <div class="lectura">
+        <aside class="riel" aria-label="Tu cuenta y el índice">
+          {Herramienta && (
+            <a class="mini" href="#herramienta" data-mini hidden>
+              <small>Tu cuenta</small>
+              <b data-mini-titulo></b>
+              <span class="cifra" data-mini-resumen></span>
+              <span class="filas" data-mini-filas></span>
+              <span class="ir">Ajustar los números</span>
+            </a>
+          )}
+          {indice.length > 3 && (
+            <nav class="indice" aria-label="En esta entrada">
+              <b>En esta entrada</b>
+              <ol>{indice.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}</ol>
+            </nav>
+          )}
+        </aside>
+        <div class="prosa" style={`--calcomania:url(${calcomania.src})`}><slot /></div>
+      </div>
+
+      {d.video && <Video titulo={d.video.titulo} youtubeId={d.video.youtubeId} />}
+
+      <aside class="cel cierre" aria-label="Consulta 1:1">
+        <span class="pestana rosa">¿Tu caso tiene algo más?</span>
+        <div class="cierre-foto"><Picture src={cruzado} formats={['avif', 'webp']} widths={[260, 520]} sizes="260px" alt="" loading="lazy" /></div>
+        <div class="cierre-texto">
+          <h2 class="disp">Hagamos la cuenta con tus números.</h2>
+          <p>Si quieres resolverlo con tus facturas, revisamos tu caso en una consulta 1:1.</p>
+          <ol class="pasos"><li>Contestas seis preguntas</li><li>Escoges tu hora y pagas en línea</li><li>Nos vemos por videollamada</li></ol>
+          <p class="manos">Aprende con nosotros, <span class="rot">o déjalo en nuestras manos.</span></p>
+          <a class="btn" data-magnetico href="/agendar">Agenda tu consulta 1:1</a>
+        </div>
+      </aside>
+
+      {d.fuentes.length > 0 && (
+        <section class="fuentes" aria-label="Fuentes">
+          <h2>Fuentes</h2>
+          <ul>{d.fuentes.map((f) => <li>{f.url ? <a href={f.url} rel="noopener">{f.texto}</a> : f.texto}</li>)}</ul>
+        </section>
+      )}
+      <p class="aviso">Esta entrada es informativa y no sustituye la revisión de tu caso. Las personas y empresas de los ejemplos son ficticias.</p>
+    </article>
+  </main>
+  <Pie />
+</Base>
+
+<script>
+  /* El riel: "Tu cuenta" sigue al simulador (evento genérico de scripts/simulador.ts), el índice marca
+     la sección que se lee, y las ligas ?caso= de la prosa cargan el caso sin recargar la página. */
+  import { iniciar } from '../scripts/movimiento';
+  import type { ResultadoSimulador } from '../scripts/simulador';
+
+  iniciar(); // el resaltador del título, lo que entra al bajar y el botón magnético, como en la portada
+
+  const mini = document.querySelector<HTMLAnchorElement>('[data-mini]');
+  if (mini) {
+    document.addEventListener('simulador:resultado', (e) => {
+      const r = (e as CustomEvent<ResultadoSimulador>).detail;
+      if (!(e.target as Element).closest('[data-enlace]')) return; // el riel sigue al simulador principal
+      mini.hidden = false;
+      mini.dataset.tono = r.tono;
+      mini.querySelector('[data-mini-titulo]')!.textContent = r.titulo;
+      mini.querySelector('[data-mini-resumen]')!.textContent = r.resumen;
+      mini.querySelector('[data-mini-filas]')!.textContent = r.filas.map((f) => `${f.nombre}: ${f.valor}`).join(' · ');
+    });
+    document.dispatchEvent(new Event('simulador:pedir'));
+  }
+
+  const ligas = [...document.querySelectorAll<HTMLAnchorElement>('.indice a')];
+  const secciones = ligas.map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1)))).filter((x): x is HTMLElement => !!x);
+  let pendiente = false;
+  const marcar = () => {
+    pendiente = false;
+    const linea = Math.min(innerHeight * 0.35, 320);
+    let actual: HTMLElement | null = null;
+    for (const s of secciones) if (s.getBoundingClientRect().top - linea <= 0) actual = s;
+    ligas.forEach((a) => a.setAttribute('aria-current', String(!!actual && decodeURIComponent(a.hash.slice(1)) === actual.id)));
+  };
+  addEventListener('scroll', () => { if (!pendiente) { pendiente = true; requestAnimationFrame(marcar); } }, { passive: true });
+  marcar();
+
+  document.addEventListener('click', (e) => {
+    const a = (e.target as Element).closest<HTMLAnchorElement>('.prosa a[href^="?caso="]');
+    const calc = document.querySelector<HTMLElement>('[data-simulador][data-enlace]');
+    if (!a || !calc) return;
+    e.preventDefault();
+    calc.dispatchEvent(new CustomEvent('simulador:caso', { detail: { caso: new URLSearchParams(a.getAttribute('href') ?? '').get('caso') } }));
+    calc.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  });
+</script>
+
+<style>
+  .entrada { padding-bottom: 0; }
+
+  /* Encabezado: el título a la izquierda; Israel a la derecha, recargado en el simulador o parado en el filete */
+  .portada { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 0 40px; padding-top: clamp(36px, 5vw, 64px); }
+  .portada:not(.con-herramienta) { border-bottom: var(--linea); }
+  .portada-texto { grid-column: 1; grid-row: 1; padding-bottom: 18px; }
+  .miga { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .miga a { text-decoration: none; border-bottom: 2px solid var(--cacao-12); }
+  .miga a:hover { border-color: var(--rosa); }
+  .borrador { margin: 14px 0 0; font-weight: 800; color: var(--rosa-hondo); }
+  h1 { margin: 16px 0 0; font-size: clamp(2.3rem, 1.2rem + 3.6vw, 4.4rem); line-height: .94; letter-spacing: -.03em; max-width: 17ch; }
+  h1 .resaltado { padding-inline: .04em; }
+  .lead { margin: 20px 0 0; max-width: 46ch; font-size: clamp(1.1rem, 1rem + .4vw, 1.28rem); line-height: 1.45; color: var(--cacao-70); }
+  .firma { grid-column: 1; grid-row: 2; margin: 0; font-size: var(--t-chico); color: var(--cacao-70); }
+  .firma b { color: var(--cacao); }
+  .vigencia { grid-column: 1; grid-row: 3; align-self: end; display: flex; gap: 10px; margin: 12px 0 30px; max-width: 66ch; padding: 10px 14px; border-radius: var(--radio-s); background: var(--papel); box-shadow: inset 0 0 0 1.5px var(--cacao); color: var(--cacao); font-size: 14px; line-height: 1.45; }
+  .vigencia i { flex: none; width: 9px; height: 9px; margin-top: .45em; border-radius: 50%; background: var(--rosa); }
+  .foto { grid-column: 2; grid-row: 1 / span 3; align-self: end; position: relative; z-index: 4; pointer-events: none; }
+  .foto :global(img) { display: block; width: 100%; height: auto; }
+  /* Recargado: las manos sobre el borde de arriba del simulador (el corte del pantalón cae justo en el filete) */
+  .apoyado { --w: 300px; width: var(--w); margin: 0 34px calc(var(--w) * -0.0853) 0; filter: drop-shadow(0 16px 18px rgba(59, 36, 24, .28)); }
+  .parado { width: 280px; margin: 0 24px -1px 0; filter: drop-shadow(0 14px 18px rgba(59, 36, 24, .22)); }
+  /* En el teléfono: el texto y la vigencia a todo lo ancho; abajo, la firma junto a Israel (que se recarga en el simulador) */
+  @media (max-width: 860px) {
+    .portada-texto { grid-column: 1 / -1; padding-bottom: 10px; }
+    .vigencia { grid-column: 1 / -1; grid-row: 2; margin: 4px 0 18px; }
+    .firma { grid-column: 1; grid-row: 3; align-self: end; padding-bottom: 26px; }
+    .foto { grid-column: 2; grid-row: 3; }
+    .apoyado { --w: 172px; margin-right: 6px; }
+    .parado { width: 150px; margin-right: 0; }
+    .vigencia { font-size: 13.5px; }
+  }
+
+  /* Lectura: el riel (Tu cuenta e índice) y la prosa */
+  .lectura { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 48px; margin-top: clamp(56px, 7vw, 96px); align-items: start; }
+  .riel { position: sticky; top: 88px; display: grid; gap: 22px; }
+  .mini { display: block; padding: 18px 18px 16px; border-radius: var(--radio-s); background: var(--cacao); color: var(--crema); text-decoration: none; box-shadow: 5px 5px 0 var(--maiz); transition: transform .3s var(--e-rebote); }
+  .mini:hover { transform: rotate(-1.2deg) translateY(-2px); }
+  .mini:focus-visible { outline-color: var(--maiz); }
+  .mini small { display: block; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(255, 246, 232, .74); }
+  .mini b { display: block; margin-top: 6px; font-size: 1.15rem; font-weight: 800; line-height: 1.15; }
+  .mini .cifra { display: block; margin-top: 4px; font-size: 1.4rem; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--crema); font-variation-settings: "wdth" 90; }
+  .mini[data-tono="bien"] .cifra { color: var(--maiz); }
+  .mini[data-tono="mal"] .cifra { color: var(--rosa); }
+  .mini .filas { display: block; margin-top: 6px; font-size: 13.5px; color: rgba(255, 246, 232, .74); font-variant-numeric: tabular-nums; }
+  .mini .ir { display: inline-block; margin-top: 10px; font-size: 14px; font-weight: 700; border-bottom: 2px solid var(--maiz); }
+  .indice { font-size: 14.5px; }
+  .indice b { display: block; margin-bottom: 8px; font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--cacao-70); }
+  .indice ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: ind; }
+  .indice li { counter-increment: ind; }
+  .indice a { display: grid; grid-template-columns: 26px 1fr; gap: 4px; padding: 6px 8px 6px 0; text-decoration: none; font-weight: 600; line-height: 1.25; border-radius: 4px; }
+  .indice a::before { content: counter(ind, decimal-leading-zero); font-size: 12px; font-weight: 800; color: var(--rosa-hondo); padding-top: 2px; font-variant-numeric: tabular-nums; }
+  .indice a:hover { background: var(--papel); }
+  .indice a[aria-current="true"] { background: var(--maiz); }
+  @media (max-width: 1080px) {
+    .lectura { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+    .riel { position: static; }
+    .mini { display: none; }
+    .indice ol { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+  }
+  @media (max-width: 560px) { .indice ol { grid-template-columns: 1fr; } }
+
+  /* La prosa (MDX): solo h2, h3, p, ul, ol, table y blockquote, hijos directos (no se mete en componentes) */
+  .prosa { counter-reset: sec; max-width: 760px; }
+  .prosa > :global(:first-child) { margin-top: 0; }
+  .prosa > :global(h2) { counter-increment: sec; margin: 84px 0 18px; padding-top: 18px; border-top: 2px dotted var(--cacao-40); font-weight: 800; font-variation-settings: "wdth" 92, "opsz" 72; font-size: clamp(1.9rem, 1.3rem + 1.9vw, 2.9rem); line-height: 1; letter-spacing: -.025em; text-wrap: balance; scroll-margin-top: 90px; max-width: none; }
+  .prosa > :global(h2)::before { content: counter(sec, decimal-leading-zero) " /"; display: block; margin-bottom: 12px; font-size: 13px; font-weight: 800; letter-spacing: .12em; color: var(--rosa-hondo); font-variation-settings: "wdth" 100; font-variant-numeric: tabular-nums; }
+  .prosa > :global(h2:first-child) { margin-top: 0; }
+  .prosa > :global(h3) { margin: 42px 0 10px; font-weight: 800; font-variation-settings: "wdth" 95, "opsz" 32; font-size: 1.35rem; line-height: 1.15; scroll-margin-top: 90px; }
+  .prosa > :global(:is(p, ul, ol)) { max-width: 66ch; }
+  .prosa > :global(p) { margin: 14px 0 0; }
+  .prosa :global(strong) { font-weight: 750; }
+  .prosa :global(a) { text-decoration-color: var(--rosa); text-decoration-thickness: 2px; text-underline-offset: 3px; font-weight: 650; }
+  .prosa :global(a:hover) { background: var(--maiz); }
+  .prosa > :global(ul) { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
+  .prosa > :global(ul > li) { position: relative; padding-left: 26px; }
+  .prosa > :global(ul > li)::before { content: ""; position: absolute; left: 2px; top: .52em; width: 11px; height: 11px; background: var(--maiz); box-shadow: inset 0 0 0 1.5px var(--cacao); rotate: 45deg; }
+  .prosa > :global(ol) { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 12px; counter-reset: item; }
+  .prosa > :global(ol > li) { counter-increment: item; position: relative; padding-left: 40px; }
+  .prosa > :global(ol > li)::before { content: counter(item); position: absolute; left: 0; top: -.06em; font-size: 1.5rem; font-weight: 800; line-height: 1; color: var(--rosa); font-variation-settings: "wdth" 88; font-variant-numeric: tabular-nums; }
+  /* El blockquote es la nota: cacao con la calcomanía del ¡Ojo! */
+  .prosa > :global(blockquote) { position: relative; margin: 34px 0 6px; max-width: 58ch; padding: 22px 24px 22px 26px; border-radius: var(--radio-s); background: var(--cacao); color: var(--crema); font-weight: 650; line-height: 1.45; box-shadow: 6px 6px 0 var(--maiz); }
+  .prosa > :global(blockquote)::after { content: ""; position: absolute; top: -26px; right: -18px; width: 66px; height: 66px; background: var(--calcomania) center / contain no-repeat; rotate: 10deg; }
+  .prosa > :global(blockquote > p) { margin: 0; }
+  /* Un párrafo que es solo cursiva es el fundamento: chico y en segundo plano */
+  .prosa > :global(p:has(> em:only-child)) { margin-top: 16px; font-size: 14px; line-height: 1.45; color: var(--cacao-70); }
+  .prosa > :global(p:has(> em:only-child) em) { font-style: normal; }
+  .prosa > :global(table) { width: 100%; margin: 22px 0 0; border-collapse: separate; border-spacing: 0; border: var(--linea); border-radius: var(--radio-s); background: var(--papel); font-size: 15.5px; line-height: 1.35; font-variant-numeric: tabular-nums; overflow: hidden; }
+  .prosa > :global(table th) { padding: 11px 12px; text-align: left; vertical-align: bottom; font-size: 12.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; background: var(--cacao); color: var(--crema); }
+  .prosa > :global(table td) { padding: 11px 12px; vertical-align: top; border-top: 1px solid var(--cacao-12); }
+  .prosa > :global(table td:first-child) { font-weight: 650; }
+  /* Las columnas de en medio son montos y porcentajes: no se parten (−$1,833.33 en un renglón) */
+  .prosa > :global(table td:not(:first-child):not(:last-child)) { white-space: nowrap; }
+  @media (max-width: 700px) {
+    .prosa > :global(table) { display: block; overflow-x: auto; font-size: 14.5px; }
+    .prosa > :global(blockquote)::after { right: -6px; width: 52px; height: 52px; }
+  }
+
+  /* Cierre: un solo CTA, a la consulta 1:1 */
+  .cierre { margin-top: clamp(60px, 7vw, 96px); display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 clamp(20px, 4vw, 56px); align-items: end; padding: clamp(26px, 4vw, 48px) clamp(22px, 4vw, 52px) 0; }
+  .cierre-foto { width: min(260px, 26vw); margin-bottom: -1px; filter: drop-shadow(0 12px 14px rgba(59, 36, 24, .22)); }
+  .cierre-foto :global(img) { display: block; width: 100%; height: auto; }
+  .cierre-texto { padding-bottom: clamp(26px, 4vw, 48px); }
+  .cierre h2 { margin: 0; font-size: clamp(2rem, 1.3rem + 2.4vw, 3.4rem); letter-spacing: -.02em; max-width: 16ch; }
+  .cierre p { margin: 12px 0 0; max-width: 52ch; color: var(--cacao-70); }
+  .pasos { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; counter-reset: p; }
+  .pasos li { counter-increment: p; display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 8px; border-radius: var(--pildora); background: var(--crema); box-shadow: inset 0 0 0 1.5px var(--cacao); font-weight: 700; font-size: 15px; }
+  .pasos li::before { content: counter(p); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--cacao); color: var(--crema); font-size: 12.5px; font-weight: 800; }
+  .cierre .manos { margin: 22px 0 0; color: var(--cacao); font-weight: 700; }
+  .cierre .manos .rot { color: var(--rosa); font-size: 1.25em; }
+  .cierre .btn { margin-top: 16px; }
+  @media (max-width: 760px) {
+    .cierre { grid-template-columns: 1fr; }
+    .cierre-foto { order: 2; width: min(220px, 60vw); justify-self: center; }
+    .cierre-texto { padding-bottom: 6px; }
+  }
+
+  .fuentes { margin-top: 54px; font-size: 14.5px; line-height: 1.45; }
+  .fuentes h2 { margin: 0 0 10px; font-size: 12.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--cacao-70); }
+  .fuentes ul { margin: 0; padding: 0 0 0 1.1em; display: grid; gap: 6px; max-width: 90ch; }
+  .fuentes a { text-decoration-color: var(--rosa); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .aviso { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--cacao-12); color: var(--cacao-70); font-size: 14px; }
+</style>

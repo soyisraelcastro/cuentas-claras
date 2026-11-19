@@ -1,0 +1,46 @@
+---
+/**
+ * El aparato de un simulador del blog: la caja cacao con su etiqueta y su título, y los lugares
+ * donde cada simulador acomoda sus piezas. Trae el CSS de todas las piezas (simulador.css), que Astro
+ * deja una sola vez por página.
+ *
+ * Slots: "casos" (Chips), "controles" (CampoMonto, Segmentado, Notas), "resultado" (Resultado,
+ * Barras, Renglones), el de en medio sin nombre (Regla, Explicacion), "pie" (aviso y CopiarEnlace) y
+ * "fija" (BarraFija, la que se pega abajo en el teléfono). Ver README, "Simuladores".
+ */
+import './simulador.css';
+import type { Tono } from '../../scripts/simulador';
+
+interface Props {
+  /** Qué simulador es: su script lo busca por `[data-simulador="<tipo>"]`. */
+  tipo: string;
+  kicker: string;
+  titulo: string;
+  /** Nombre accesible del bloque. */
+  etiqueta: string;
+  id?: string;
+  /** El que lee y escribe la URL (?caso=…). Uno por página. */
+  enlace?: boolean;
+  /** El caso con el que arranca si la URL no pide otro. */
+  inicial?: string;
+  /** El tono y el veredicto del resultado inicial: el HTML ya sale pintado. */
+  tono?: Tono;
+  veredicto?: string;
+}
+const { tipo, kicker, titulo, etiqueta, id, enlace = false, inicial, tono = 'neutro', veredicto } = Astro.props;
+---
+<section class="sim" id={id} data-simulador={tipo} data-enlace={enlace ? '' : undefined} data-inicial={inicial} data-tono={tono} data-veredicto={veredicto} aria-label={etiqueta}>
+  <header class="sim-cabeza">
+    <p class="sim-kicker"><i aria-hidden="true"></i>{kicker}</p>
+    <h2 class="sim-titulo">{titulo}</h2>
+  </header>
+  <slot name="casos" />
+  <div class="sim-cuerpo">
+    <div class="sim-controles"><slot name="controles" /></div>
+    <div class="sim-resultado"><slot name="resultado" /></div>
+  </div>
+  <slot />
+  <div class="sim-pie"><slot name="pie" /></div>
+  <slot name="fija" />
+  <p class="sim-voz" data-sim-voz aria-live="polite"></p>
+</section>

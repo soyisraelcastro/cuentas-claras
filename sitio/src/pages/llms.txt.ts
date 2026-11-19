@@ -4,6 +4,7 @@
  */
 import type { APIRoute } from 'astro';
 
+import { entradas, rutaEntrada } from '../lib/blog';
 import { CANAL, DESPACHO, PERSONA, PRECIO_CONSULTA_URL, SITIO } from '../lib/sitio';
 
 const PAGINAS = [
@@ -12,7 +13,8 @@ const PAGINAS = [
   { ruta: '/privacidad', titulo: 'Aviso de privacidad', que: 'qué datos se piden y cómo ejercer los derechos ARCO' },
 ];
 
-export const GET: APIRoute = () => {
+export const GET: APIRoute = async () => {
+  const blog = await entradas();
   const doc = `# ${SITIO.nombre} (${SITIO.url.replace('https://', '')})
 
 > ${SITIO.nombre} es el canal de YouTube (${CANAL.url}) de ${DESPACHO.nombre}, un
@@ -33,7 +35,7 @@ ${DESPACHO.url} (precios públicos en ${DESPACHO.url}/honorarios).
 
 ${PAGINAS.map((p) => `- [${p.titulo}](${SITIO.url}${p.ruta}): ${p.que}`).join('\n')}
 
-## Recursos
+${blog.length ? `## Blog\n\nCada entrada tiene su versión en Markdown limpio (la misma URL con .md al final).\n\n${blog.map((e) => `- [${e.data.titulo}](${SITIO.url}${rutaEntrada(e)}) ([Markdown](${SITIO.url}${rutaEntrada(e)}.md)): ${e.data.descripcion}`).join('\n')}\n\n` : ''}## Recursos
 
 - [Contenido completo en texto plano](${SITIO.url}/llms-full.txt)
 - [El despacho: ${DESPACHO.nombre}](${DESPACHO.url})
