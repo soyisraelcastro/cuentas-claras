@@ -18,11 +18,86 @@ pnpm build      # .vercel/output
 | `/` | La portada ("libro mayor vivo", 2026-11-02): Israel y la guía, marquesina, calculadora de deducciones, tres cajones, las series, quién está detrás, la guía, cinco preguntas y colaboraciones |
 | `/agendar` | Precalificación de la consulta 1:1 (seis pasos). Quien pasa recibe la página de citas de Google Calendar, que cobra con Stripe al reservar. Quien no, su salida: trámite, despacho, paquete o lo gratis |
 | `/privacidad` | Aviso de privacidad |
+| `/blog`, `/blog/<entrada>` | El blog (content collection `blog`, MDX). Ver "Blog" abajo |
 | `/sistema` | El design system vivo (noindex, fuera del sitemap) |
 | `/llms.txt`, `/llms-full.txt` | Para LLMs, con el patrón de soycontador-ai: salen de `src/lib`, no se escriben a mano |
 | `/api/guia` | Alta en Sendy, lista "guia" (doble opt-in) |
 | `/api/agendar` | Vuelve a correr la precalificación, avisa por SES y da de alta en la lista "diagnostico" |
 | `/guia`, `/consulta` | Alias para decir en video (302) |
+
+## Blog
+
+Entradas en `src/content/blog/<entrada>.mdx`, con una colección de contenido de Astro 7: `src/content.config.ts`, con el cargador `glob` y `z` de `astro/zod`. La URL es el nombre del archivo, `/blog/<entrada>`.
+
+- **Frontmatter**, validado por el schema:
+  - `titulo`, `descripcion` (de 50 a 170 caracteres; es la meta description) y `fecha`;
+  - opcionales: `actualizado`, `serie`, `etiquetas`, `portada` (imagen local, sale como og:image a 1200×630), `video` (`titulo`, `youtubeId`, `duracion` ISO 8601), `palabraInstagram` (la palabra del bot en Pregón), `vigencia` (aviso de qué ley y desde cuándo), `herramienta` (el simulador que abre la entrada, ver "Simuladores"), `fuentes` y `borrador`.
+- **`borrador: true`:** la entrada solo existe en `pnpm dev` y en las previews de Vercel (cualquier rama que no sea `main`, con `VERCEL_ENV=preview`), con `noindex`. En el build de producción no se genera ni entra al sitemap ni a `llms.txt`. Mientras no haya entradas publicadas, `/blog` lleva `noindex`.
+- **Componentes en el texto:** se importan arriba del MDX (`import CalculadoraIva7 from '../../components/blog/CalculadoraIva7.astro'`) y se usan como etiqueta. El script de un componente busca solo dentro de su contenedor, así que se puede usar dos veces en la misma página.
+- **Video:** `src/components/blog/Video.astro` es una fachada. Al cargar la página solo baja la miniatura; el iframe de `youtube-nocookie` entra con el play. Así no se carga JavaScript de terceros al abrir. Sin `youtubeId`, el bloque dice "Próximamente".
+- **Layout:** `src/layouts/Entrada.astro` es el diseño 2 de `design/blog/iva-7/` ("Simulador", elegido el 2026-11-19) y aplica a todas las entradas. **La herramienta es condicional:** con `herramienta` en el frontmatter, Israel se recarga en el simulador, que abre la entrada justo bajo el encabezado, y en escritorio el riel lleva "Tu cuenta" (sigue al simulador) arriba del índice; sin `herramienta`, el encabezado lleva la foto de Israel pensando parado sobre el filete, no hay aparato ni barra pegada en el teléfono, y el riel es solo el índice (si hay más de 3 secciones). Luego el video, el cierre a `/agendar`, las fuentes y el aviso. El JSON-LD es `BlogPosting` (más `VideoObject` si hay video) y las migas (`src/lib/schema.ts`). `og:type` es `article`.
+- **La prosa del MDX** es Markdown puro (h2, h3, p, listas, tablas, blockquote) y el layout la viste con `.prosa > …` (solo hijos directos, para no meterse en los componentes): el blockquote es la nota cacao con la calcomanía del ¡Ojo!, un párrafo que es solo cursiva (`*Fundamento: …*`) sale chico, las columnas de en medio de una tabla no se parten (montos), y una liga `[Ana](?caso=ana)` carga ese caso en el simulador sin recargar la página.
+- **Lectura:** `src/lib/blog.ts` (`entradas()`, la única regla de borradores; y las fechas, que se formatean en UTC para no restar un día).
+- **IVA al 7%:** `herramienta: iva7`. Los casos, la cuenta y los textos del simulador están en `src/lib/iva7.ts` (fuente única); `src/components/blog/CalculadoraIva7.astro` es la composición de las piezas. Acepta `?caso=ana|jorge|luis|marta|sa` o `?cobra=&compras=&retencion=si&persona=moral` para compartir.
+
+Nueva entrada: copiar el frontmatter de `iva-7-resico-2027.mdx` (quitar `herramienta` si el live no trae simulador), escribir en Markdown y correr `pnpm check` (valida el frontmatter) y `pnpm dev`.
+
+### Simuladores (uno por live)
+
+Cada live con números puede traer su simulador. Se arma con las piezas de `src/components/simulador/`, sin copiar CSS ni JS:
+
+| Pieza | Qué es |
+|---|---|
+| `Aparato.astro` | La caja cacao con etiqueta y título. Slots: `casos`, `controles`, `resultado`, el de en medio, `pie` y `fija`. Trae `simulador.css` (una vez por página, todo con `.sim`; las columnas dependen del ancho del aparato, así que sirve igual a todo lo ancho que a media prosa) |
+| `Chips.astro` | Casos de ejemplo con su calcomanía (`src/assets/stickers/`), más "Tus números" |
+| `CampoMonto.astro` | La cifra grande, editable y con comas, y un slider de $0 a millones (escala logarítmica; con teclado avanza de 500, mil, 10 mil o 50 mil) |
+| `Segmentado.astro` | Un interruptor de opciones (Sí/No, física/moral) con radios de verdad |
+| `Notas.astro` | Notas chicas que cambian con lo que eliges |
+| `Resultado.astro` | El remate en Shrikhand (el único de la pieza), la cifra grande y lo que significa al año |
+| `Barras.astro` | Barras en la misma escala; un saldo negativo cuelga bajo la línea del cero |
+| `Renglones.astro` | La cuenta en renglones cortos; el resultado de cada renglón no se parte |
+| `Regla.astro` | Una regla de 0 a 100% con la raya donde cambia el veredicto y tu marca; `apagada` cuando no aplica |
+| `Explicacion.astro` | El porqué del resultado |
+| `BarraFija.astro` | El resultado en una línea, pegado abajo en el teléfono mientras el simulador está en pantalla |
+| `CopiarEnlace.astro` | Copia el enlace que abre el simulador con el caso o tus números |
+
+`src/scripts/simulador.ts` trae lo que se repite. Puras (también corren en el servidor): `pesos()` con el menos tipográfico (−$1,833.33), `porcentaje()`, `escalaDeMontos()`, `geometriaBarras()`. De página: `iniciarTodos`, `campoMonto`, `segmentado`, `chips`, `ponerTexto`, `ponerNota`, `mostrar`, `contar`, `pegar`, `pintarBarras`, `pintarRegla`, `leerUrl`/`escribirUrl` (solo el simulador con `data-enlace` toca la URL), `copiarEnlace`, `anunciar` (la región aria-live, cuando dejas de mover) y `emitirResultado`. El color del resultado sale de `data-tono` en la raíz (`bien` maíz, `mal` rosa, `neutro` crema): cada simulador decide qué veredicto es qué tono. Eventos: `simulador:resultado` ({ titulo, filas, veredicto, tono, resumen }, lo escucha el riel), `simulador:pedir` y `simulador:caso` (las ligas `?caso=` de la prosa).
+
+Reglas: la cuenta y los textos van en `src/lib/<tema>.ts`, sin DOM, como fuente única. El componente la usa en su frontmatter (el HTML sale con el caso inicial calculado: buscadores y LLMs ven cifras reales sin JavaScript) y en su `<script>` para actualizar. No se ponen cifras en un JSON dentro del HTML.
+
+**Ejemplo: Buen Fin y meses sin intereses** (el live con Diana):
+
+1. `src/lib/buen-fin.ts`: los casos (id, nombre, icono, depósito, gastos fijos, mensualidades, compras a meses con precio y plazo, aguinaldo), `calcular()` y `presentar(estado)`, que devuelve los textos, el tono y las `filas` del riel.
+2. `src/components/blog/SimuladorBuenFin.astro`, con las piezas:
+
+   ```astro
+   <Aparato tipo="buen-fin" kicker="Simulador · tus meses sin intereses" titulo="¿Te alcanza en enero?"
+     etiqueta="Simulador: compras a meses" id={id} enlace={enlace} inicial={caso.id} tono={v.tono}>
+     <Chips slot="casos" marcado={caso.id} casos={CASOS.map((c) => ({ id: c.id, nombre: c.nombre, detalle: c.detalle, icono: icono(c.icono) }))} />
+     <Fragment slot="controles">
+       <CampoMonto nombre="deposito" etiqueta="Lo que te depositan al mes" valor={v.estado.deposito} />
+       <CampoMonto nombre="fijos" etiqueta="Tus gastos fijos" valor={v.estado.fijos} />
+       <CampoMonto nombre="aguinaldo" etiqueta="Tu aguinaldo" valor={v.estado.aguinaldo} />
+     </Fragment>
+     <Fragment slot="resultado">
+       <Resultado rotulo={v.rotulo} cifra={v.cifraTexto} que={v.que} anio={v.anio} />
+       <Barras barras={[{ clave: 'libre', nombre: 'Te queda', valor: v.libre, texto: v.libreTexto, rol: 'referencia' },
+                        { clave: 'meses', nombre: 'Mensualidades', valor: v.meses, texto: v.mesesTexto }]} />
+     </Fragment>
+     <Regla titulo="Tus mensualidades contra lo que te queda" … />
+     <BarraFija slot="fija" que={v.fija.que} cifra={v.fija.cifra} />
+   </Aparato>
+   <script>
+     import { iniciarTodos, campoMonto, chips, emitirResultado /* … */ } from '../../scripts/simulador';
+     import { presentar /* … */ } from '../../lib/buen-fin';
+     iniciarTodos('[data-simulador="buen-fin"]', (raiz, n) => { /* estado, campos, pintar(), emitirResultado(…) */ });
+   </script>
+   ```
+
+   La lista de compras a meses (un renglón por compra, con precio y plazo) sería una pieza nueva en `simulador/`, con su función en `simulador.ts`, para que la use el que sigue.
+3. En `src/content.config.ts`, `herramienta: z.enum(['iva7', 'buen-fin'])`; en `Entrada.astro`, `HERRAMIENTAS = { iva7: CalculadoraIva7, 'buen-fin': SimuladorBuenFin }`; en el MDX, `herramienta: buen-fin`.
+
+Los que siguen salen igual: deducciones personales (`CampoMonto` por tipo de deducción y `Regla` con el tope del 15% o 5 UMA), y "¿solo tienes sueldo, tengo que declarar?" (un `Segmentado` por pregunta, `CampoMonto` para los montos y `Explicacion` con la respuesta). Si el live no se presta a calculadora, la entrada va sin `herramienta`. Si una entrada quiere una calculadora a media prosa, se importa en el MDX como cualquier componente (con `enlace` si debe leer la URL).
 
 ## Fuentes únicas
 
